@@ -31,26 +31,29 @@ namespace Microsoft.AspNet.Identity.EntityFramework
                     b.Key(u => u.Id);
                     b.ForRelational().Table("AspNetUsers");
                     b.Property(u => u.ConcurrencyStamp).ConcurrencyToken();
+                    b.HasMany(x => x.Roles).WithOne().ForeignKey(x=>x.UserId);
+                    b.HasMany(x => x.Claims).WithOne().ForeignKey(x=>x.UserId);
+                    b.HasMany(x => x.Logins).WithOne().ForeignKey(x=>x.UserId);
                 });
 
             builder.Entity<TRole>(b =>
                 {
                     b.Key(r => r.Id);
                     b.ForRelational().Table("AspNetRoles");
+                    b.HasMany(x => x.Claims).WithOne().ForeignKey(x => x.RoleId);
+                    b.HasMany(x => x.Users).WithOne().ForeignKey(x => x.RoleId);
                     b.Property(r => r.ConcurrencyStamp).ConcurrencyToken();
                 });
 
             builder.Entity<IdentityUserClaim<TKey>>(b =>
                 {
                     b.Key(uc => uc.Id);
-                    b.HasOne<TUser>().WithMany().ForeignKey(uc => uc.UserId);
                     b.ForRelational().Table("AspNetUserClaims");
                 });
 
             builder.Entity<IdentityRoleClaim<TKey>>(b =>
                 {
                     b.Key(rc => rc.Id);
-                    b.HasOne<TRole>().WithMany().ForeignKey(rc => rc.RoleId);
                     b.ForRelational().Table("AspNetRoleClaims");
                 });
 
@@ -66,7 +69,6 @@ namespace Microsoft.AspNet.Identity.EntityFramework
             builder.Entity<IdentityUserLogin<TKey>>(b =>
                 {
                     b.Key(l => new { l.LoginProvider, l.ProviderKey });
-                    b.HasOne<TUser>().WithMany().ForeignKey(uc => uc.UserId);
                     b.ForRelational().Table("AspNetUserLogins");
                 });
         }

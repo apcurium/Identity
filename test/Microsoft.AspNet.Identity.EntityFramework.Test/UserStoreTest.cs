@@ -430,48 +430,36 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             }
         }
 
-        // TODO: can we move these to UserManagerTestBase?
-        [Fact]
-        public async Task DeleteRoleNonEmptySucceedsTest()
+        protected override IdentityUser CreateTestUser(string namePrefix = "", string email = "", string phoneNumber = "",
+            bool lockoutEnabled = false, DateTimeOffset? lockoutEnd = default(DateTimeOffset?), bool useNamePrefixAsUserName = false)
         {
-            // Need fail if not empty?
-            var context = CreateTestContext();
-            var userMgr = CreateManager(context);
-            var roleMgr = CreateRoleManager(context);
-            var role = new IdentityRole("deleteNonEmpty");
-            Assert.False(await roleMgr.RoleExistsAsync(role.Name));
-            IdentityResultAssert.IsSuccess(await roleMgr.CreateAsync(role));
-            var user = new IdentityUser("t");
-            IdentityResultAssert.IsSuccess(await userMgr.CreateAsync(user));
-            IdentityResultAssert.IsSuccess(await userMgr.AddToRoleAsync(user, role.Name));
-            var roles = await userMgr.GetRolesAsync(user);
-            Assert.Equal(1, roles.Count());
-            IdentityResultAssert.IsSuccess(await roleMgr.DeleteAsync(role));
-            Assert.Null(await roleMgr.FindByNameAsync(role.Name));
-            Assert.False(await roleMgr.RoleExistsAsync(role.Name));
-            // REVIEW: We should throw if deleteing a non empty role?
-            roles = await userMgr.GetRolesAsync(user);
-
-            Assert.Equal(0, roles.Count());
+            return new IdentityUser
+            {
+                UserName = useNamePrefixAsUserName ? namePrefix : string.Format("{0}{1}", namePrefix, Guid.NewGuid()),
+                Email = email,
+                PhoneNumber = phoneNumber,
+                LockoutEnabled = lockoutEnabled,
+                LockoutEnd = lockoutEnd
+            };
         }
 
-        // TODO: cascading deletes?  navigation properties not working
-        //[Fact]
-        //public async Task DeleteUserRemovesFromRoleTest()
-        //{
-        //    // Need fail if not empty?
-        //    var userMgr = CreateManager();
-        //    var roleMgr = CreateRoleManager();
-        //    var role = new IdentityRole("deleteNonEmpty");
-        //    Assert.False(await roleMgr.RoleExistsAsync(role.Name));
-        //    IdentityResultAssert.IsSuccess(await roleMgr.CreateAsync(role));
-        //    var user = new IdentityUser("t");
-        //    IdentityResultAssert.IsSuccess(await userMgr.CreateAsync(user));
-        //    IdentityResultAssert.IsSuccess(await userMgr.AddToRoleAsync(user, role.Name));
-        //    Assert.Equal(1, role.Users.Count);
-        //    IdentityResultAssert.IsSuccess(await userMgr.DeleteAsync(user));
-        //    role = await roleMgr.FindByIdAsync(role.Id);
-        //    Assert.Equal(0, role.Users.Count);
-        //}
+        protected override IdentityRole CreateTestRole(string roleName = "")
+        {
+            roleName = string.IsNullOrEmpty(roleName)
+                ? Guid.NewGuid().ToString()
+                : roleName;
+            return new IdentityRole(roleName);
+        }
+
+        protected override void SetUserPasswordHash(IdentityUser user, string hashedPassword)
+        {
+            user.PasswordHash = hashedPassword;
+        }
+
+    }
+
+    public class ApplicationUser : IdentityUser
+    {
+        
     }
 }

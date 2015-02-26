@@ -23,6 +23,27 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
         public class TestDbContext : IdentityDbContext<TUser, TRole, TKey> { }
 
+        protected override TUser CreateTestUser(string namePrefix = "", string email = "", string phoneNumber = "",
+            bool lockoutEnabled = false, DateTimeOffset? lockoutEnd = default(DateTimeOffset?), bool useNamePrefixAsUserName = false)
+        {
+            return new TUser
+            {
+                UserName = useNamePrefixAsUserName ? namePrefix : string.Format("{0}{1}", namePrefix, Guid.NewGuid()),
+                Email = email,
+                PhoneNumber = phoneNumber,
+                LockoutEnabled = lockoutEnabled,
+                LockoutEnd = lockoutEnd
+            };
+        }
+
+        protected override TRole CreateTestRole(string roleName = "")
+        {
+            roleName = string.IsNullOrEmpty(roleName)
+                ? Guid.NewGuid().ToString()
+                : roleName;
+            return new TRole() {Name = roleName};
+        }
+
         [TestPriority(-1000)]
         [Fact]
         public void DropDatabaseStart()
@@ -67,6 +88,11 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
         protected override void AddRoleStore(IServiceCollection services, object context = null)
         {
             services.AddInstance<IRoleStore<TRole>>(new RoleStore<TRole, TestDbContext, TKey>((TestDbContext)context));
+        }
+
+        protected override void SetUserPasswordHash(TUser user, string hashedPassword)
+        {
+            user.PasswordHash = hashedPassword;
         }
 
         public void EnsureDatabase()
@@ -168,8 +194,8 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             var context = CreateContext();
             var manager = CreateManager(context);
             var role = CreateRoleManager(context);
-            var admin = CreateRole("Admin");
-            var local = CreateRole("Local");
+            var admin = CreateTestRole("Admin" + Guid.NewGuid().ToString());
+            var local = CreateTestRole("Local" + Guid.NewGuid().ToString());
             IdentityResultAssert.IsSuccess(await manager.CreateAsync(user));
             IdentityResultAssert.IsSuccess(await manager.AddLoginAsync(user, new UserLoginInfo("provider", user.Id.ToString(), "display")));
             IdentityResultAssert.IsSuccess(await role.CreateAsync(admin));
@@ -248,5 +274,6 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             Assert.Equal(1, (await manager.GetLoginsAsync(userByEmail)).Count);
             Assert.Equal(2, (await manager.GetRolesAsync(userByEmail)).Count);
         }
+
     }
 }

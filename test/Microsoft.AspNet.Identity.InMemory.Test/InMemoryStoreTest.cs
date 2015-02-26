@@ -7,7 +7,7 @@ using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.AspNet.Identity.InMemory.Test
 {
-    public class InMemoryStoreTest : UserManagerTestBase<InMemoryUser, IdentityRole>
+    public class InMemoryStoreTest : UserManagerTestBase<TestUser, TestRole>
     {
         protected override object CreateTestContext()
         {
@@ -16,12 +16,37 @@ namespace Microsoft.AspNet.Identity.InMemory.Test
 
         protected override void AddUserStore(IServiceCollection services, object context = null)
         {
-            services.AddSingleton<IUserStore<InMemoryUser>, InMemoryUserStore<InMemoryUser>>();
+            services.AddSingleton<IUserStore<TestUser>, InMemoryUserStore<TestUser>>();
         }
 
         protected override void AddRoleStore(IServiceCollection services, object context = null)
         {
-            services.AddSingleton<IRoleStore<IdentityRole>, InMemoryRoleStore<IdentityRole>>();
+            services.AddSingleton<IRoleStore<TestRole>, InMemoryRoleStore<TestRole>>();
+        }
+
+        protected override TestRole CreateTestRole(string roleName = "")
+        {
+            return String.IsNullOrEmpty(roleName)
+                ? new TestRole(Guid.NewGuid().ToString())
+                : new TestRole(roleName);
+        }
+
+        protected override void SetUserPasswordHash(TestUser user, string hashedPassword)
+        {
+            user.PasswordHash = hashedPassword;
+        }
+
+        protected override TestUser CreateTestUser(string namePrefix = "", string email = "", string phoneNumber = "", 
+            bool lockoutEnabled = false, DateTimeOffset? lockoutEnd = default(DateTimeOffset?), bool useNamePrefixAsUserName = false)
+        {
+            return new TestUser
+            {
+                UserName = useNamePrefixAsUserName ? namePrefix :  string.Format("{0}{1}", namePrefix, Guid.NewGuid()),
+                Email = email,
+                PhoneNumber = phoneNumber,
+                LockoutEnabled = lockoutEnabled,
+                LockoutEnd = lockoutEnd
+            };
         }
     }
 }
