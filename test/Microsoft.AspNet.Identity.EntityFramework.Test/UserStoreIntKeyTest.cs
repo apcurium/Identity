@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq.Expressions;
 using Xunit;
 
 namespace Microsoft.AspNet.Identity.EntityFramework.Test
@@ -34,5 +35,13 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
                 return _connectionString;
             }
         }
+
+        protected override Expression<Func<IntRole, bool>> RoleNamePredicate(string roleName, bool contains = false)
+        => contains ? (Expression<Func<IntRole, bool>>)(u => u.Name.Contains(roleName))
+                    : (u => u.Name == roleName);
+
+        protected override Expression<Func<IntUser, bool>> UserNamePredicate(string userName, bool contains = false)
+        => contains ? (Expression<Func<IntUser, bool>>)(u => u.UserName.Contains(userName))
+                    : (u => u.UserName == userName);
     }
 }

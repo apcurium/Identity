@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq.Expressions;
 using Microsoft.AspNet.Identity.Test;
 using Microsoft.Framework.DependencyInjection;
 using Xunit;
@@ -68,5 +69,13 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
         {
             services.AddInstance<IRoleStore<GuidRole>>(new ApplicationRoleStore((TestDbContext)context));
         }
+
+        protected override Expression<Func<GuidUser, bool>> UserNamePredicate(string userName, bool contains = false)
+        => contains ? (Expression<Func<GuidUser, bool>>) (u => u.UserName.Contains(userName))
+                    : (u => u.UserName == userName);
+
+        protected override Expression<Func<GuidRole, bool>> RoleNamePredicate(string roleName, bool contains = false)
+        => contains ? (Expression<Func<GuidRole, bool>>) (u => u.Name.Contains(roleName))
+                    : (u => u.Name == roleName);
     }
 }

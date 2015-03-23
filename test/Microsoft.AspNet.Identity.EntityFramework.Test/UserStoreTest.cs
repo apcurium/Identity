@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Hosting;
@@ -456,6 +457,13 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             user.PasswordHash = hashedPassword;
         }
 
+        protected override Expression<Func<IdentityUser, bool>> UserNamePredicate(string userName, bool contains = false)
+        => contains ? (Expression<Func<IdentityUser, bool>>)(u => u.UserName.Contains(userName))
+                    : (u => u.UserName == userName);
+
+        protected override Expression<Func<IdentityRole, bool>> RoleNamePredicate(string roleName, bool contains = false)
+        => contains ? (Expression<Func<IdentityRole, bool>>)(u => u.Name.Contains(roleName))
+                    : (u => u.Name == roleName);
     }
 
     public class ApplicationUser : IdentityUser

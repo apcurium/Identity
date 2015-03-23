@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq.Expressions;
 using Microsoft.AspNet.Identity.Test;
 using Microsoft.Framework.DependencyInjection;
 
@@ -50,5 +51,13 @@ namespace Microsoft.AspNet.Identity.EntityFramework.InMemory.Test
         {
             user.PasswordHash = hashedPassword;
         }
+
+        protected override Expression<Func<IdentityUser, bool>> UserNamePredicate(string userName, bool contains = false)
+        => contains ? (Expression<Func<IdentityUser, bool>>)(u => u.UserName.Contains(userName))
+                    : (u => u.UserName == userName);
+
+        protected override Expression<Func<IdentityRole, bool>> RoleNamePredicate(string roleName, bool contains = false)
+        => contains ? (Expression<Func<IdentityRole, bool>>)(u => u.Name.Contains(roleName))
+                    : (u => u.Name == roleName);
     }
 }

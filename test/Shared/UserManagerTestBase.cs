@@ -11,6 +11,7 @@ using Microsoft.AspNet.Testing;
 using Microsoft.Framework.DependencyInjection;
 using Microsoft.Framework.Logging;
 using Xunit;
+using System.Linq.Expressions;
 
 namespace Microsoft.AspNet.Identity.Test
 {
@@ -89,6 +90,10 @@ namespace Microsoft.AspNet.Identity.Test
 
         protected abstract TRole CreateTestRole(string roleName = "");
 
+        protected abstract Expression<Func<TUser, bool>> UserNamePredicate(string userName, bool contains = false);
+
+        protected abstract Expression<Func<TRole, bool>> RoleNamePredicate(string roleName, bool contains = false);
+
         [Fact]
         public async Task CanDeleteUser()
         {
@@ -140,7 +145,7 @@ namespace Microsoft.AspNet.Identity.Test
             IdentityResultAssert.IsSuccess(await manager.CreateAsync(user, "password"));
             Assert.True(await manager.CheckPasswordAsync(user, "password"));
             var userId = await manager.GetUserIdAsync(user);
-            string expectedLog = string.Format("{0} for user: {1} : {2}", "CheckPasswordAsync", userId, true.ToString());
+            string expectedLog = string.Format("{0} : {1}", "CheckPasswordAsync", true.ToString());
             IdentityResultAssert.VerifyLogMessage(manager.Logger, expectedLog);
 
             SetUserPasswordHash(user, manager.PasswordHasher.HashPassword(user, "New"));
@@ -516,7 +521,7 @@ namespace Microsoft.AspNet.Identity.Test
         {
             var manager = CreateManager();
             var username = "AddDupeUserNameFails" + Guid.NewGuid();
-            var user = CreateTestUser(username, useNamePrefixAsUserName:true);
+            var user = CreateTestUser(username, useNamePrefixAsUserName: true);
             var user2 = CreateTestUser(username, useNamePrefixAsUserName: true);
             IdentityResultAssert.IsSuccess(await manager.CreateAsync(user));
             IdentityResultAssert.IsFailure(await manager.CreateAsync(user2), IdentityErrorDescriber.Default.DuplicateUserName(username));
@@ -587,13 +592,16 @@ namespace Microsoft.AspNet.Identity.Test
         public async Task CanFindUsersViaUserQuerable()
         {
             var mgr = CreateManager();
-            var users = GenerateUsers("CanFindUsersViaUserQuerable", 3);
-            foreach (var u in users)
+            if (mgr.SupportsQueryableUsers)
             {
-                IdentityResultAssert.IsSuccess(await mgr.CreateAsync(u));
+                var users = GenerateUsers("CanFindUsersViaUserQuerable", 3);
+                foreach (var u in users)
+                {
+                    IdentityResultAssert.IsSuccess(await mgr.CreateAsync(u));
+                }
+                var usersQ = mgr.Users.Where(UserNamePredicate("CanFindUsersViaUserQuerable",contains:true));
+                Assert.Null(mgr.Users.FirstOrDefault(UserNamePredicate("bogus")));
             }
-            var usersQ = mgr.Users.Where(u => mgr.GetUserNameAsync(u).Result.StartsWith("CanFindUsersViaUserQuerable"));
-            Assert.Null(mgr.Users.FirstOrDefault(u => mgr.GetUserNameAsync(u).Result == "bogus"));
         }
 
         [Fact]
@@ -1088,14 +1096,18 @@ namespace Microsoft.AspNet.Identity.Test
         public async Task CanQueryableRoles()
         {
             var manager = CreateRoleManager();
-            var roles = GenerateRoles("CanQuerableRolesTest", 4);
-            foreach (var r in roles)
+            if (!manager.SupportsQueryableRoles)
             {
-                IdentityResultAssert.IsSuccess(await manager.CreateAsync(r));
+                var roles = GenerateRoles("CanQuerableRolesTest", 4);
+                foreach (var r in roles)
+                {
+                    IdentityResultAssert.IsSuccess(await manager.CreateAsync(r));
+                }
+                Assert.Equal(roles.Count, manager.Roles.Count(RoleNamePredicate("CanQuerableRolesTest", contains:true)));
+                var r1 = manager.Roles.FirstOrDefault(RoleNamePredicate("CanQuerableRolesTest1"));
+                Assert.Equal(roles[1], r1);
+
             }
-            Assert.Equal(roles.Count, manager.Roles.Count(r => manager.GetRoleNameAsync(r).Result.StartsWith("CanQuerableRolesTest")));
-            var r1 = manager.Roles.FirstOrDefault(r => manager.GetRoleNameAsync(r).Result.StartsWith("CanQuerableRolesTest1"));
-            Assert.Equal(roles[1], r1);
         }
 
         // Enable when delete on cascade is supported in EF
@@ -1207,7 +1219,8 @@ namespace Microsoft.AspNet.Identity.Test
                 Assert.Equal(roles.Count, rs.Count);
                 foreach (var r in roles)
                 {
-                    Assert.True(rs.Any(role => role == roleManager.GetRoleNameAsync(r).Result));
+                    var expectedRoleName = await roleManager.GetRoleNameAsync(r);
+                    Assert.True(rs.Any(role => role == expectedRoleName));
                 }
             }
         }
@@ -1624,10 +1637,12 @@ namespace Microsoft.AspNet.Identity.Test
             var manager = CreateManager(context);
             var roleManager = CreateRoleManager(context);
             var roles = GenerateRoles("UsersInRole", 4);
+            var roleNameList = new List<string>();
 
             foreach (var role in roles)
             {
                 IdentityResultAssert.IsSuccess(await roleManager.CreateAsync(role));
+                roleNameList.Add(await roleManager.GetRoleNameAsync(role));
             }
 
             for (int i = 0; i < 6; i++)
@@ -1637,7 +1652,7 @@ namespace Microsoft.AspNet.Identity.Test
 
                 if ((i % 2) == 0)
                 {
-                    IdentityResultAssert.IsSuccess(await manager.AddToRolesAsync(user, roles.Select(x => roleManager.GetRoleNameAsync(x).Result).AsEnumerable()));
+                    IdentityResultAssert.IsSuccess(await manager.AddToRolesAsync(user, roleNameList));
                     IdentityResultAssert.VerifyUserManagerSuccessLog(manager.Logger, "AddToRolesAsync", await manager.GetUserIdAsync(user));
                 }
             }

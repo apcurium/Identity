@@ -71,11 +71,10 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             CreateContext(true);
             var builder = new ApplicationBuilder(CallContextServiceLocator.Locator.ServiceProvider);
 
-            builder.UseServices(services =>
-            {
-                DbUtil.ConfigureDbServices<IdentityDbContext>(ConnectionString, services);
-                services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityDbContext>();
-            });
+            var services = new ServiceCollection();
+            DbUtil.ConfigureDbServices<IdentityDbContext>(ConnectionString, services);
+            services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityDbContext>();
+            builder.ApplicationServices = services.BuildServiceProvider();
 
             var userManager = builder.ApplicationServices.GetRequiredService<UserManager<IdentityUser>>();
             var dbContext = builder.ApplicationServices.GetRequiredService<IdentityDbContext>();
@@ -104,11 +103,10 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             CreateContext(true);
             var builder = new ApplicationBuilder(CallContextServiceLocator.Locator.ServiceProvider);
 
-            builder.UseServices(services =>
-            {
-                DbUtil.ConfigureDbServices<IdentityDbContext>(ConnectionString, services);
-                services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityDbContext>();
-            });
+            var services = new ServiceCollection();
+            DbUtil.ConfigureDbServices<IdentityDbContext>(ConnectionString, services);
+            services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityDbContext>();
+            builder.ApplicationServices = services.BuildServiceProvider();
 
             var userManager = builder.ApplicationServices.GetRequiredService<UserManager<IdentityUser>>();
             var dbContext = builder.ApplicationServices.GetRequiredService<IdentityDbContext>();
@@ -119,7 +117,7 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
 
             for (var i = 0; i < 10; i++)
             {
-               IdentityResultAssert.IsSuccess(await userManager.AddLoginAsync(user, new UserLoginInfo("foo" + i, "bar" + i, "foo")));
+                IdentityResultAssert.IsSuccess(await userManager.AddLoginAsync(user, new UserLoginInfo("foo" + i, "bar" + i, "foo")));
             }
 
             user = dbContext.Users.Include(x => x.Logins).FirstOrDefault(x => x.UserName == username);
@@ -137,11 +135,10 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             CreateContext(true);
             var builder = new ApplicationBuilder(CallContextServiceLocator.Locator.ServiceProvider);
 
-            builder.UseServices(services =>
-            {
-                DbUtil.ConfigureDbServices<IdentityDbContext>(ConnectionString, services);
-                services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityDbContext>();
-            });
+            var services = new ServiceCollection();
+            DbUtil.ConfigureDbServices<IdentityDbContext>(ConnectionString, services);
+            services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityDbContext>();
+            builder.ApplicationServices = services.BuildServiceProvider();
 
             var userManager = builder.ApplicationServices.GetRequiredService<UserManager<IdentityUser>>();
             var roleManager = builder.ApplicationServices.GetRequiredService<RoleManager<IdentityRole>>();
@@ -184,11 +181,10 @@ namespace Microsoft.AspNet.Identity.EntityFramework.Test
             CreateContext(true);
             var builder = new ApplicationBuilder(CallContextServiceLocator.Locator.ServiceProvider);
 
-            builder.UseServices(services =>
-            {
-                DbUtil.ConfigureDbServices<IdentityDbContext>(ConnectionString, services);
-                services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityDbContext>();
-            });
+            var services = new ServiceCollection();
+            DbUtil.ConfigureDbServices<IdentityDbContext>(ConnectionString, services);
+            services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityDbContext>();
+            builder.ApplicationServices = services.BuildServiceProvider();
 
             var roleManager = builder.ApplicationServices.GetRequiredService<RoleManager<IdentityRole>>();
             var dbContext = builder.ApplicationServices.GetRequiredService<IdentityDbContext>();
